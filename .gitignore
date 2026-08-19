@@ -1,0 +1,51 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+
+# Wine prefixes
+wine-bios/
+
+# Third-party source trees and build output
+tools/
+Build/
+
+# Vendor downloads and extracted proprietary binaries
+bin/
+bios_extracted/
+BIOS_EXTRACTED/
+BIOS_EXTRACTED_DUMP/
+PSP_EXTRACTED/
+UEFI_DUMP/
+efi-test/
+
+# Firmware, flash and NVRAM images
+*.rom
+*.fd
+*.bin
+*.efi
+*.sct
+*.cap
+*.dump
+
+# Executables, libraries and drivers
+*.exe
+*.dll
+*.sys
+*.cat
+libs/
+
+# Generated logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+
+# Optional local staging area
+artifacts/
+
+# OS and editor metadata
+.DS_Store
+.idea/
+.vscode/
