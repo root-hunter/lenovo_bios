@@ -167,6 +167,6 @@ jobs:
           else
             gh release create "$release_tag" dist/* \
               --target "$GITHUB_SHA" \
-              --title "SREP USB image $release_tag" \
+              --title "Lenovo BIOS Advanced Unlocker $release_tag" \
               --generate-notes
           fi
