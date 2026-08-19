@@ -2,7 +2,7 @@
 
 # Lenovo IdeaPad Gaming 3 15ARH05 BIOS Research
 
-**Firmware extraction, IFR analysis, and a confirmed runtime reveal of the hidden InsydeH2O menus**
+**From a failed keyboard shortcut to a reverse-engineered, runtime EFI menu reveal**
 
 <img src="screenshots/advanced-01-menu-overview.jpg" alt="Hidden Advanced menu running on a Lenovo IdeaPad Gaming 3 15ARH05" width="900">
 
@@ -10,15 +10,54 @@
 
 </div>
 
-This repository documents the extraction and analysis of a Lenovo BIOS update for
-the IdeaPad Gaming 3 15ARH05, including the discovery of a hidden InsydeH2O
-`Advanced` form set and its successful, non-persistent exposure at runtime with
-SREP and Lenovo's `SetupUtilityApp`.
+## Why this research started
 
-Only original documentation, scripts, and experimental text configurations are
-intended to be tracked. Lenovo/Insyde executables, firmware images, extracted
-modules, variable dumps, logs, third-party source trees, and build products are
-local research artifacts excluded by `.gitignore`.
+I did not begin with an unlocked BIOS or even with proof that this laptop had an
+`Advanced` menu. I only wanted to answer one question: **does the Lenovo IdeaPad
+Gaming 3 15ARH05 contain the same hidden firmware controls reported on other
+Lenovo models?**
+
+Several reports suggested that combinations such as `Fn+R+N` could reveal extra
+BIOS pages. Those sequences worked on some later Lenovo generations, but repeated
+attempts did nothing on this specific 15ARH05. The ordinary setup interface gave
+no indication that an Advanced form existed at all.
+
+Rather than assume that the menu was absent, I wanted evidence from the firmware
+itself. That turned a failed keyboard experiment into a reverse-engineering
+project: recover the update image, locate the Setup Utility, decode its IFR,
+prove whether a hidden form set existed, determine what controlled its
+visibility, and finally test that finding on the physical machine.
+
+## The path from question to proof
+
+| Stage | Question or result |
+|---|---|
+| Keyboard tests | `Fn+R+N` and related sequences produced no visible change. |
+| Firmware recovery | The official Lenovo updater was unpacked into a complete 16 MiB update ROM. |
+| Platform analysis | The AMD PSP directory and reset-stage image were identified and extracted. |
+| Setup reconstruction | The correct HII/IFR package revealed a complete form set titled `Advanced`. |
+| Visibility analysis | The menu was not protected by one obvious IFR `SuppressIf` or setup-variable toggle. |
+| Trigger identification | `H2OFormBrowserDxe` visibility entries associate each form-set GUID with a 32-bit shown/hidden flag. |
+| EFI patch design | A model-tested SREP configuration changes those flags in memory and launches `SetupUtilityApp` before the patch disappears. |
+| Physical validation | `Advanced`, `AMD PBS`, and `AMD CBS` rendered on the `FCCN19WW` test laptop. |
+
+The effective trigger was therefore not a secret keyboard combination. It was
+the runtime visibility state used by Lenovo's InsydeH2O form browser. The USB EFI
+approach patches that state from hidden (`0`) to shown (`1`) for the relevant
+form-set GUIDs, then opens the Setup Utility in the **same boot session**.
+
+## The result
+
+| Firmware evidence | Physical-machine evidence |
+|---|---|
+| Hidden `Advanced` form set recovered from IFR | `Advanced` rendered in Setup Utility |
+| Form-set GUID and variable stores identified | `AMD PBS` and `AMD CBS` also became visible |
+| Visibility trigger represented by GUID + shown flag | Combined runtime patch succeeded on `FCCN19WW` |
+| No firmware flashing required for the reveal | 33 photographs preserve the successful session |
+
+The [physical-test gallery](docs/SCREENSHOTS.md) is the final proof: the hidden
+pages are present and can be exposed on this machine. This confirms menu
+visibility only; it does not establish that changing any exposed value is safe.
 
 > [!WARNING]
 > This is firmware research, not a ready-to-flash modification. A wrong setup
@@ -44,18 +83,6 @@ The complete, beginner-friendly procedure is in
 > the research log below. The guide contains the exact file layout, source
 > revisions, tested hash, safety checks, and troubleshooting table.
 
-## What has been demonstrated
-
-| Firmware research | Physical-machine validation |
-|---|---|
-| 16 MiB update ROM recovered and mapped | Combined SREP patch executed on `FCCN19WW` |
-| Hidden `Advanced` IFR inventory reconstructed | `Advanced`, `AMD PBS`, and `AMD CBS` rendered in Setup Utility |
-| AMD PSP and reset-stage paths analysed | Menus inspected without flashing a modified firmware image |
-
-The photographs are direct evidence of the runtime result on the test laptop.
-They are observation records, not recommended values or a configuration guide.
-See the [annotated screenshot gallery](docs/SCREENSHOTS.md) for all captures.
-
 ## Hardware and firmware context
 
 The machine used for the investigation reports:
@@ -72,6 +99,11 @@ The machine used for the investigation reports:
 The version difference is important. Structures found in the `FCCN21WW` update
 must not be assumed to have identical addresses, byte patterns, module names, or
 variable semantics in the installed `FCCN19WW` firmware.
+
+Only original documentation, scripts, and experimental text configurations are
+intended to be tracked. Lenovo/Insyde executables, firmware images, extracted
+modules, variable dumps, logs, third-party source trees, and build products are
+local research artifacts excluded by `.gitignore`.
 
 ## Current status
 
@@ -112,6 +144,11 @@ the local analysis workspace. Those files are deliberately not part of the Git
 repository and must be produced from a legitimately obtained Lenovo update.
 
 ## 1. Starting from the official Lenovo update
+
+Once the keyboard shortcuts had failed, the official update package became the
+only reliable way to answer whether the menu existed on this firmware family.
+The first objective was therefore to recover a form that could be inspected
+without modifying or flashing the laptop.
 
 The starting point was the official
 [Lenovo BIOS Update for Windows 10 (64-bit) — IdeaPad Gaming 3 15ARH05](https://support.lenovo.com/us/en/downloads/ds545103-bios-update-for-windows-10-64-bit-ideapad-gaming-3-15arh05)
@@ -278,7 +315,7 @@ or the other devices expected by this firmware. Relevant traces are retained in
 `artifacts/logs/qemu-execution.log` and
 `artifacts/logs/qemu-reset-image.log`.
 
-## 5. Discovery of the hidden Advanced menu
+## 5. Proving that the hidden Advanced menu exists
 
 The extracted Setup Utility contains the ordinary Home, Information,
 Configuration, Power, Security, Boot, and Exit form sets, plus a separate form
@@ -306,10 +343,19 @@ The recovered Advanced form set is:
 | Main VarStore ID / size | `0x1234` / `0x2BC` |
 | Secondary store | `AdvanceConfig`, ID `0x1233`, size 8 |
 
-There is no top-level IFR `SuppressIf` surrounding the Advanced form set. The
-working hypothesis is therefore that the menu is omitted by a visibility table
-or registration logic in `H2OFormBrowserDxe`, rather than enabled by one obvious
-`SystemConfig` byte.
+There is no top-level IFR `SuppressIf` surrounding the Advanced form set. This
+ruled out the simplest explanation: one obvious `SystemConfig` byte directly
+controlling the whole menu from inside the IFR.
+
+The relevant visibility mechanism lives in `H2OFormBrowserDxe`. Its form list
+pairs a form-set GUID with a 32-bit shown/hidden field. In the patch patterns,
+the GUID is followed by `00000000` when hidden; replacing it with `01000000`
+changes that entry to shown. The successful physical test confirmed that this
+visibility field is the effective runtime trigger on the tested environment.
+
+This distinction matters. The discovery was not a guessed NVRAM offset and it
+was not another keyboard shortcut. It provided a narrow runtime patch target
+that could be tested without writing a modified image to SPI flash.
 
 The IFR also contains disabled, unnamed numeric questions at `SystemConfig`
 offsets `0x79`, `0x80`, and `0x81`, and at `AdvanceConfig` offsets `0x00` through
@@ -319,16 +365,16 @@ must not be modified speculatively.
 See [docs/ADVANCED_OPTIONS.md](docs/ADVANCED_OPTIONS.md) for the complete option
 inventory recovered from the correct IFR file.
 
-## 6. Unlock attempts
+## 6. From the visibility trigger to a USB EFI patch
 
-### Keyboard sequence
+### Why the keyboard route was abandoned
 
 The commonly reported `Fn+R+N` sequence was tried repeatedly without any visible
 effect. Public reports of this sequence working often concern later Lenovo
 15ACH6/ARH7 generations; reports for the 15ARH05 are inconsistent. It is not a
 confirmed unlock method for this firmware.
 
-### SREP runtime patch — confirmed
+### Engineering the runtime EFI patch — confirmed
 
 Smokeless Runtime EFI Patcher (SREP) tag `0.1.4c` was built from source because
 the upstream repository did not provide a current release asset. The build used:
@@ -348,25 +394,29 @@ EFI/BOOT/BOOTX64.EFI
 SREP_Config.cfg
 ```
 
-The current configuration is tracked as
+I used SREP as the runtime patch engine and designed the USB boot flow around the
+discovered form-browser visibility mechanism. The tested configuration is
+tracked as
 [`configs/srep/15ARH05-FCCN21WW.cfg`](configs/srep/15ARH05-FCCN21WW.cfg). It uses
-SREP upstream's combined Lenovo form-set patch for AMD PBS, AMD CBS, Power, and
-Advanced, then launches `SetupUtilityApp` in the same boot session.
+the combined Lenovo form-set patterns documented upstream for AMD PBS, AMD CBS,
+Power, and Advanced, then launches `SetupUtilityApp` in the same boot session.
 
 For the end-to-end build, USB preparation, boot, verification, and log-recovery
 procedure, follow the [SREP USB Creation and Boot Guide](docs/USB_GUIDE.md).
 
-The first USB test used only the Advanced GUID pattern and launched
+The first prototype used only the Advanced GUID pattern and launched
 `SetupUtility`. Its saved SREP log proves that the application and configuration
 loaded, but reports `No Patter Found`. Entering the regular F2 setup after that
 boot could not show a runtime patch because the patched environment was no
 longer active.
 
-The rebuilt USB used the combined form-set configuration and launched
-`SetupUtilityApp` in the same boot session. This attempt succeeded on the test
-laptop running `FCCN19WW`: the hidden `Advanced`, `AMD PBS`, and `AMD CBS` menu
-entries became visible and their pages rendered correctly. The result is
-documented in the [physical-test gallery](docs/SCREENSHOTS.md).
+That failure clarified two requirements: use the combined visibility patterns
+and open the firmware's `SetupUtilityApp` before leaving the patched boot
+environment. The rebuilt USB therefore used the combined form-set configuration
+and launched `SetupUtilityApp` in the same boot session. This attempt succeeded
+on the test laptop running `FCCN19WW`: the hidden `Advanced`, `AMD PBS`, and
+`AMD CBS` menu entries became visible and their pages rendered correctly. The
+result is documented in the [physical-test gallery](docs/SCREENSHOTS.md).
 
 This confirms a **runtime menu reveal**, not a permanent unlock. The patch is
 applied in memory for that boot path; the firmware image on SPI flash was not
