@@ -1,0 +1,21 @@
+diff --git a/SmokelessRuntimeEFIPatcher.dsc b/SmokelessRuntimeEFIPatcher.dsc
+index 6324658..c5e7782 100755
+--- a/SmokelessRuntimeEFIPatcher.dsc
++++ b/SmokelessRuntimeEFIPatcher.dsc
+@@ -8,6 +8,8 @@
+   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
+   SKUID_IDENTIFIER               = DEFAULT
+ 
++!include MdePkg/MdeLibs.dsc.inc
++
+ [LibraryClasses]
+   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
+   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
+@@ -28,6 +30,7 @@
+   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
+   OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
+   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
++  TimerLib|MdePkg/Library/BaseTimerLibNullTemplate/BaseTimerLibNullTemplate.inf
+   RngLib|MdePkg/Library/BaseRngLib/BaseRngLib.inf
+   HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
+ [Components]

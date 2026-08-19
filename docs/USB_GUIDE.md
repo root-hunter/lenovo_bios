@@ -107,7 +107,7 @@ The workflow in
 [`build-usb-image.yml`](../.github/workflows/build-usb-image.yml) performs the
 complete pinned-source build:
 
-1. checks out EDK II and SREP at the pinned commits below;
+1. checks out EDK II and SREP at the commits pinned in the workflow;
 2. builds the x86-64 release EFI application;
 3. validates its PE/COFF architecture;
 4. creates a 128 MiB GPT image with one FAT32 EFI System Partition;
@@ -117,10 +117,61 @@ complete pinned-source build:
 7. publishes the same files to GitHub Releases when a `v*` tag is pushed or a
    manual run supplies a `release_tag`.
 
-Manual runs without a release tag remain downloadable from the workflow run for
-30 days. The packaging logic is kept in
+Pushes to `main`, pull requests, and manual runs without a release tag remain
+downloadable as workflow artifacts for 30 days. Only `v*` tags or a manual
+`release_tag` publish files to GitHub Releases. The packaging logic is kept in
 [`package_srep_usb.sh`](../scripts/package_srep_usb.sh) so the disk layout can be
 tested independently of GitHub Actions.
+
+### Local build with the latest stable EDK II
+
+To reproduce the current EDK II stable release locally, install the build and
+image tools on Ubuntu or Debian:
+
+```bash
+sudo apt update
+sudo apt install build-essential file gdisk git mtools nasm \
+  python3 python3-setuptools uuid-dev xz-utils zip
+```
+
+Then run from the repository root:
+
+```bash
+scripts/build_srep_latest.sh
+```
+
+By default this checks out `edk2-stable202605`, keeps the temporary source tree
+under `/tmp/lenovo-srep-latest-build`, and writes the resulting image and build
+metadata to `artifacts/releases/latest-edk2/`. Both locations can be overridden:
+
+```bash
+scripts/build_srep_latest.sh /path/to/build-workspace /path/to/output
+```
+
+The script fetches only the five EDK II submodules needed by this build and
+automatically applies
+[`srep-edk2-stable202605.patch`](../patches/srep-edk2-stable202605.patch). It
+uses the current `GCC` toolchain profile because modern EDK II no longer defines
+the historical `GCC5` profile name.
+
+Verify the generated files before writing them:
+
+```bash
+cd artifacts/releases/latest-edk2
+sha256sum --check SHA256SUMS
+xz --decompress --keep lenovo-15arh05-srep-usb-*.img.xz
+lsblk --output NAME,SIZE,MODEL,TRAN,MOUNTPOINTS
+```
+
+After identifying a stable USB device by model and capacity, follow the Linux
+`dd` command in the [fast path](#fast-path--use-the-ready-to-write-image). Never
+reuse an old `/dev/sdX` name after reconnecting a drive; run `lsblk` again.
+
+The `edk2-stable202605` and pinned SREP source combination has successfully
+booted on the documented physical test machine. The EDK II commit, compiler,
+Python version, EFI hash, disk-image hash, and ZIP hash are recorded for every
+rebuild. Since toolchain changes can alter the binary, first boot each new
+artifact in observation-only mode and exit without saving.
 
 ## Step 1 — Get this repository
 

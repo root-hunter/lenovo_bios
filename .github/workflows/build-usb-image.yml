@@ -7,41 +7,51 @@ on:
         description: Optional v* tag to create or update as a GitHub Release
         required: false
         type: string
+  pull_request:
   push:
+    branches:
+      - main
     tags:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: srep-usb-${{ github.ref }}
+  group: srep-usb-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
-  EDK2_COMMIT: 16779ede2d366bfc6b702e817356ccf43425bcc8
-  SREP_COMMIT: 83d0ae47c9a48b3a2227aef06fb98a372c5ba354
+  EDK2_REF: edk2-stable202605
+  EDK2_COMMIT: b03a21a63e3bd001f52c527e5a57feddb53a690b
+  SREP_REF: 83d0ae47c9a48b3a2227aef06fb98a372c5ba354
 
 jobs:
-  build-usb-image:
-    # EDK II stable202205 is tested with the older GCC/toolchain shipped here.
-    # Keep this pinned instead of following ubuntu-latest (currently 24.04).
-    runs-on: ubuntu-22.04
+  build_usb_image:
+    name: Build and verify USB image
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
+    outputs:
+      artifact_name: ${{ steps.artifact.outputs.name }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
 
     steps:
       - name: Check out this repository
-        uses: actions/checkout@v6
+        # actions/checkout v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           persist-credentials: false
 
       - name: Install build and image tools
         env:
           DEBIAN_FRONTEND: noninteractive
+        shell: bash
         run: |
-          # Hosted runners also enable unrelated Microsoft/Google repositories.
-          # The build needs only Ubuntu packages, so exclude those repositories
-          # to prevent a third-party mirror from stalling apt-get update.
+          set -euo pipefail
+
+          # Hosted runners also enable unrelated third-party repositories. This
+          # build needs only Ubuntu packages; excluding the others prevents a
+          # slow external mirror from blocking apt-get update indefinitely.
           disabled_sources="${RUNNER_TEMP}/disabled-apt-sources"
           mkdir -p "$disabled_sources"
           for source in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
@@ -60,113 +70,105 @@ jobs:
           sudo timeout --signal=TERM 5m apt-get \
             -o Acquire::Retries=3 \
             --yes --no-install-recommends install \
-            build-essential file gdisk iasl mtools nasm \
+            build-essential file gdisk git mtools nasm \
             python3 python3-setuptools uuid-dev xz-utils zip
 
-      - name: Fetch pinned EDK II and SREP sources
-        working-directory: ${{ runner.temp }}
-        run: |
-          git clone --branch edk2-stable202205 \
-            https://github.com/tianocore/edk2.git edk2
-          git -C edk2 checkout "$EDK2_COMMIT"
-          git -C edk2 submodule update --init --recursive
-          git clone https://github.com/barlowhaydnb/SmokelessRuntimeEFIPatcher.git \
-            edk2/SmokelessRuntimeEFIPatcher
-          git -C edk2/SmokelessRuntimeEFIPatcher checkout "$SREP_COMMIT"
-
-      - name: Build the x86-64 SREP EFI application
-        working-directory: ${{ runner.temp }}/edk2
-        shell: bash
-        run: |
-          make -C BaseTools -j"$(nproc)"
-          source ./edksetup.sh
-          build -b RELEASE -t GCC5 \
-            -p SmokelessRuntimeEFIPatcher/SmokelessRuntimeEFIPatcher.dsc \
-            -a X64 -s
-
-      - name: Validate the EFI executable
-        id: efi
-        shell: bash
-        run: |
-          efi_path="${{ runner.temp }}/edk2/Build/SmokelessRuntimeEFIPatcher/RELEASE_GCC5/X64/SmokelessRuntimeEFIPatcher.efi"
-          test -s "$efi_path"
-          file "$efi_path" | tee efi-file-type.txt
-          file "$efi_path" | grep -E 'PE32\+.*EFI application.*x86-64'
-          sha256sum "$efi_path" | tee efi-sha256.txt
-          echo "path=$efi_path" >> "$GITHUB_OUTPUT"
-
-      - name: Select artifact version
+      - name: Select artifact and release version
         id: version
         env:
           MANUAL_RELEASE_TAG: ${{ inputs.release_tag }}
         shell: bash
         run: |
+          set -euo pipefail
+
+          release_tag=""
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             version=$GITHUB_REF_NAME
+            release_tag=$GITHUB_REF_NAME
           elif [[ -n "$MANUAL_RELEASE_TAG" ]]; then
             version=$MANUAL_RELEASE_TAG
+            release_tag=$MANUAL_RELEASE_TAG
           else
-            version="run-$GITHUB_RUN_NUMBER-$GITHUB_SHA"
+            version="run-${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:12}"
           fi
+
           if [[ ! "$version" =~ ^[A-Za-z0-9._-]+$ ]]; then
             echo "Invalid artifact or release version: $version" >&2
             exit 1
           fi
-          if [[ -n "$MANUAL_RELEASE_TAG" && ! "$MANUAL_RELEASE_TAG" =~ ^v[A-Za-z0-9._-]+$ ]]; then
-            echo "Manual release_tag must begin with v" >&2
+          if [[ -n "$release_tag" && ! "$release_tag" =~ ^v[A-Za-z0-9._-]+$ ]]; then
+            echo "Release tag must begin with v" >&2
             exit 1
           fi
-          echo "value=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Create and verify the USB artifacts
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Build, package, and verify the latest stable EDK II image
         env:
-          EFI_PATH: ${{ steps.efi.outputs.path }}
-          VERSION: ${{ steps.version.outputs.value }}
+          ARTIFACT_VERSION: ${{ steps.version.outputs.value }}
         shell: bash
         run: |
-          chmod +x scripts/package_srep_usb.sh
-          scripts/package_srep_usb.sh \
-            "$EFI_PATH" \
-            configs/srep/15ARH05-FCCN21WW.cfg \
-            dist \
-            "$VERSION"
-          cp efi-file-type.txt efi-sha256.txt dist/
-          {
-            echo "Repository commit: $GITHUB_SHA"
-            echo "EDK II commit: $EDK2_COMMIT"
-            echo "SREP commit: $SREP_COMMIT"
-            echo "Runner: $RUNNER_OS $RUNNER_ARCH"
-          } > dist/BUILD-INFO.txt
-          (cd dist && sha256sum BUILD-INFO.txt efi-file-type.txt efi-sha256.txt >> SHA256SUMS)
+          set -euo pipefail
+          scripts/build_srep_latest.sh "${RUNNER_TEMP}/srep-build" dist
+
+      - name: Inspect release contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          find dist -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
           (cd dist && sha256sum --check SHA256SUMS)
 
-      - name: Upload workflow artifact
-        uses: actions/upload-artifact@v7
+      - name: Select workflow artifact name
+        id: artifact
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        shell: bash
+        run: echo "name=lenovo-15arh05-srep-usb-${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload verified workflow artifact
+        # actions/upload-artifact v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: lenovo-15arh05-srep-usb-${{ steps.version.outputs.value }}
+          name: ${{ steps.artifact.outputs.name }}
           path: dist/
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
 
-      - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+  publish_release:
+    name: Publish GitHub Release
+    needs: build_usb_image
+    if: needs.build_usb_image.outputs.release_tag != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download verified workflow artifact
+        # actions/download-artifact v8.0.1
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: ${{ needs.build_usb_image.outputs.artifact_name }}
+          path: dist
+
+      - name: Revalidate downloaded release files
+        shell: bash
+        run: (cd dist && sha256sum --check SHA256SUMS)
+
+      - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          MANUAL_RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ needs.build_usb_image.outputs.release_tag }}
         shell: bash
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            release_tag=$GITHUB_REF_NAME
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/* --clobber
           else
-            release_tag=$MANUAL_RELEASE_TAG
-          fi
-
-          if gh release view "$release_tag" >/dev/null 2>&1; then
-            gh release upload "$release_tag" dist/* --clobber
-          else
-            gh release create "$release_tag" dist/* \
+            gh release create "$RELEASE_TAG" dist/* \
               --target "$GITHUB_SHA" \
-              --title "Lenovo BIOS Advanced Unlocker $release_tag" \
+              --title "Lenovo BIOS Unlocker $RELEASE_TAG" \
               --generate-notes
           fi

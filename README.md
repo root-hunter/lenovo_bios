@@ -91,6 +91,14 @@ The complete, beginner-friendly procedure is in
 > the research log below. The guide contains the exact file layout, source
 > revisions, tested hash, safety checks, and troubleshooting table.
 
+Want to reproduce the release locally? The same guide includes a
+**[latest-stable EDK II build](docs/USB_GUIDE.md#local-build-with-the-latest-stable-edk-ii)**
+using `edk2-stable202605`. The repository applies the required SREP compatibility
+patch automatically and produces a ready-to-write `.img.xz`. This EDK II/SREP
+source combination has completed a real-hardware boot test on the documented
+15ARH05; every rebuilt artifact should still be tried in observation-only mode
+before changing or saving firmware settings.
+
 ## Hardware and firmware context
 
 The machine used for the investigation reports:
@@ -145,9 +153,12 @@ local research artifacts excluded by `.gitignore`.
 │   ├── ADVANCED_OPTIONS.md
 │   ├── SCREENSHOTS.md
 │   └── USB_GUIDE.md
+├── patches/
+│   └── srep-edk2-stable202605.patch
 ├── screenshots/
 │   └── 47 optimized physical-test photographs
 └── scripts/
+    ├── build_srep_latest.sh
     ├── extract_reset_image.py
     └── package_srep_usb.sh
 ```
