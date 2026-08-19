@@ -42,6 +42,10 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Validate BIOS profiles
+        shell: bash
+        run: python3 scripts/profile_tool.py validate profiles/*
+
       - name: Install build and image tools
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -110,7 +114,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          scripts/build_srep_latest.sh "${RUNNER_TEMP}/srep-build" dist
+          scripts/build_srep_latest.sh "${RUNNER_TEMP}/srep-build" dist all
 
       - name: Inspect release contents
         shell: bash
@@ -124,7 +128,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.value }}
         shell: bash
-        run: echo "name=lenovo-15arh05-srep-usb-${VERSION}" >> "$GITHUB_OUTPUT"
+        run: echo "name=bios-profiles-srep-usb-${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Upload verified workflow artifact
         # actions/upload-artifact v7.0.1

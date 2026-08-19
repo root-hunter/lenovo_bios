@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "lenovo-15arh05-fccn",
+  "display_name": "Lenovo IdeaPad Gaming 3 15ARH05 — FCCN family",
+  "platform": {
+    "manufacturer": "Lenovo",
+    "machine_types": ["82EY"],
+    "product_names": ["IP3GAMING-15ARH"]
+  },
+  "compatibility": {
+    "bios_family": "FCCN",
+    "analyzed_versions": ["FCCN21WW"],
+    "hardware_tested_versions": ["FCCN19WW"]
+  },
+  "patch": {
+    "module": "H2OFormBrowserDxe",
+    "launcher": "SetupUtilityApp"
+  },
+  "status": "hardware-tested",
+  "config": "SREP_Config.cfg",
+  "readme": "README.txt",
+  "evidence": [
+    {
+      "bios_version": "FCCN21WW",
+      "file": "FCCN21WW-update-16MiB.rom",
+      "type": "extracted-update-rom",
+      "sha256": "988209aea6660cf774d79a785ea3dcea98fb48a519c709715733c254320d10a8"
+    }
+  ],
+  "notes": "The hash records the analyzed ROM; it is evidence, not a runtime compatibility requirement. FCCN19WW was validated on physical hardware using these patterns."
+}

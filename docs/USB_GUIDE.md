@@ -64,7 +64,7 @@ SetupUtilityApp opens with the hidden menus visible
 Open the [latest GitHub Release](https://github.com/root-hunter/lenovo_bios/releases/latest)
 and download:
 
-- `lenovo-15arh05-srep-usb-*.img.xz`, the compressed GPT/FAT32 disk image;
+- `lenovo-15arh05-fccn-srep-usb-*.img.xz`, the compressed GPT/FAT32 disk image;
 - `SHA256SUMS`, used to verify the download.
 
 The release also provides `*-files.zip` for users who already have a correctly
@@ -83,7 +83,7 @@ On Linux, download both files into one directory and run:
 
 ```bash
 grep '\.img\.xz$' SHA256SUMS | sha256sum --check -
-xz --decompress --keep lenovo-15arh05-srep-usb-*.img.xz
+xz --decompress --keep lenovo-15arh05-fccn-srep-usb-*.img.xz
 lsblk --output NAME,SIZE,MODEL,TRAN,MOUNTPOINTS
 ```
 
@@ -92,7 +92,7 @@ the explicit device path. The following is only a template; replace `/dev/sdX`
 after checking `lsblk`:
 
 ```bash
-sudo dd if=lenovo-15arh05-srep-usb-*.img \
+sudo dd if=lenovo-15arh05-fccn-srep-usb-*.img \
   of=/dev/sdX bs=4M status=progress conv=fsync
 sync
 ```
@@ -148,6 +148,10 @@ metadata to `artifacts/releases/latest-edk2/`. Both locations can be overridden:
 scripts/build_srep_latest.sh /path/to/build-workspace /path/to/output
 ```
 
+The optional third argument selects a BIOS profile. Use `all` to compile SREP
+once and package every validated profile. Profile structure and compatibility
+metadata are documented in the [BIOS profile system](BIOS_PROFILES.md).
+
 The script fetches only the five EDK II submodules needed by this build and
 automatically applies
 [`srep-edk2-stable202605.patch`](../patches/srep-edk2-stable202605.patch). It
@@ -159,7 +163,7 @@ Verify the generated files before writing them:
 ```bash
 cd artifacts/releases/latest-edk2
 sha256sum --check SHA256SUMS
-xz --decompress --keep lenovo-15arh05-srep-usb-*.img.xz
+xz --decompress --keep lenovo-15arh05-fccn-srep-usb-*.img.xz
 lsblk --output NAME,SIZE,MODEL,TRAN,MOUNTPOINTS
 ```
 
@@ -187,7 +191,7 @@ new `lenovo_bios/` directory.
 The file used on the USB is:
 
 ```text
-configs/srep/15ARH05-FCCN21WW.cfg
+profiles/lenovo-15arh05-fccn/SREP_Config.cfg
 ```
 
 Do not copy and retype its hexadecimal patterns manually. Copy the tracked file
@@ -335,7 +339,7 @@ The names and locations matter:
 
 - Rename `SmokelessRuntimeEFIPatcher.efi` to `BOOTX64.EFI`.
 - Put it in `EFI/BOOT/`.
-- Copy `configs/srep/15ARH05-FCCN21WW.cfg` to the USB root.
+- Copy `profiles/lenovo-15arh05-fccn/SREP_Config.cfg` to the USB root.
 - Rename that copied configuration to `SREP_Config.cfg`.
 - Make sure Windows has not silently created `SREP_Config.cfg.txt`.
 
@@ -349,7 +353,7 @@ cd ../..
 mkdir -p /media/USER/SREP/EFI/BOOT
 cp srep-build/edk2/Build/SmokelessRuntimeEFIPatcher/RELEASE_GCC5/X64/SmokelessRuntimeEFIPatcher.efi \
   /media/USER/SREP/EFI/BOOT/BOOTX64.EFI
-cp lenovo_bios/configs/srep/15ARH05-FCCN21WW.cfg \
+cp lenovo_bios/profiles/lenovo-15arh05-fccn/SREP_Config.cfg \
   /media/USER/SREP/SREP_Config.cfg
 sync
 ```
@@ -469,7 +473,8 @@ the safe observation and documentation of the runtime-visible forms.
 ## Related documentation
 
 - [Project overview and research notes](../README.md)
-- [Tracked SREP configuration](../configs/srep/15ARH05-FCCN21WW.cfg)
+- [Tracked FCCN BIOS profile](../profiles/lenovo-15arh05-fccn/profile.json)
+- [Adding and building BIOS profiles](BIOS_PROFILES.md)
 - [Advanced option inventory](ADVANCED_OPTIONS.md)
 - [Physical-test gallery](SCREENSHOTS.md)
 - [Upstream SREP documentation](https://github.com/barlowhaydnb/SmokelessRuntimeEFIPatcher)

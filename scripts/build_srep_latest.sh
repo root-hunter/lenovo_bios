@@ -10,6 +10,7 @@ srep_ref=${SREP_REF:-83d0ae47c9a48b3a2227aef06fb98a372c5ba354}
 expected_edk2_commit=${EDK2_COMMIT:-}
 build_root=${1:-/tmp/lenovo-srep-latest-build}
 output_dir=${2:-$repo_root/artifacts/releases/latest-edk2}
+profile_selector=${3:-lenovo-15arh05-fccn}
 
 for command_name in file git make nasm python3; do
   command -v "$command_name" >/dev/null 2>&1 || {
@@ -83,14 +84,30 @@ file "$efi_path" | grep -E 'PE32\+.*EFI.*application.*x86-64'
 srep_commit=$(git -C "$srep_dir" rev-parse HEAD)
 version=${ARTIFACT_VERSION:-"${edk2_ref}-${edk2_commit:0:12}"}
 
-"$repo_root/scripts/package_srep_usb.sh" \
-  "$efi_path" \
-  "$repo_root/configs/srep/15ARH05-FCCN21WW.cfg" \
-  "$output_dir" \
-  "$version"
+if [[ "$profile_selector" == "all" ]]; then
+  mapfile -t profile_ids < <(
+    python3 "$repo_root/scripts/profile_tool.py" list "$repo_root/profiles"
+  )
+else
+  profile_ids=("$profile_selector")
+fi
+
+for profile_id in "${profile_ids[@]}"; do
+  profile_dir="$repo_root/profiles/$profile_id"
+  [[ -d "$profile_dir" ]] || {
+    echo "Unknown profile: $profile_id (expected $profile_dir)" >&2
+    exit 1
+  }
+  "$repo_root/scripts/package_srep_usb.sh" \
+    "$efi_path" \
+    "$profile_dir" \
+    "$output_dir" \
+    "$version"
+done
 
 {
-  echo "Status: source revisions boot-tested on Lenovo 15ARH05; this artifact requires observation-only verification"
+  echo "Status: profile-specific artifacts; each profile records its own verification level"
+  echo "Profiles: ${profile_ids[*]}"
   echo "EDK II ref: $edk2_ref"
   echo "EDK II commit: $edk2_commit"
   echo "SREP commit: $srep_commit"

@@ -73,7 +73,7 @@ visibility only; it does not establish that changing any exposed value is safe.
 The fastest route is the
 **[latest ready-to-write USB image](https://github.com/root-hunter/lenovo_bios/releases/latest)**.
 Every release is built automatically from the pinned EDK II and SREP commits,
-contains the tracked model configuration, and includes SHA-256 checksums. It
+contains one artifact per tracked BIOS profile, and includes SHA-256 checksums. It
 does not contain Lenovo firmware.
 
 The complete, beginner-friendly procedure is in
@@ -143,14 +143,16 @@ local research artifacts excluded by `.gitignore`.
 ```text
 .
 ├── README.md
-├── configs/
-│   └── srep/
-│       ├── 15ARH05-FCCN21WW.cfg
-│       └── USB-README.txt
+├── profiles/
+│   └── lenovo-15arh05-fccn/
+│       ├── profile.json
+│       ├── SREP_Config.cfg
+│       └── README.txt
 ├── .github/workflows/
 │   └── build-usb-image.yml
 ├── docs/
 │   ├── ADVANCED_OPTIONS.md
+│   ├── BIOS_PROFILES.md
 │   ├── SCREENSHOTS.md
 │   └── USB_GUIDE.md
 ├── patches/
@@ -160,6 +162,7 @@ local research artifacts excluded by `.gitignore`.
 └── scripts/
     ├── build_srep_latest.sh
     ├── extract_reset_image.py
+    ├── profile_tool.py
     └── package_srep_usb.sh
 ```
 
@@ -419,11 +422,14 @@ SREP_Config.cfg
 ```
 
 I used SREP as the runtime patch engine and designed the USB boot flow around the
-discovered form-browser visibility mechanism. The tested configuration is
-tracked as
-[`configs/srep/15ARH05-FCCN21WW.cfg`](configs/srep/15ARH05-FCCN21WW.cfg). It uses
+discovered form-browser visibility mechanism. The tested configuration is in the
+[`lenovo-15arh05-fccn` profile](profiles/lenovo-15arh05-fccn/profile.json). It uses
 the combined Lenovo form-set patterns documented upstream for AMD PBS, AMD CBS,
 Power, and Advanced, then launches `SetupUtilityApp` in the same boot session.
+
+Profiles keep compatibility claims separate from hashes of the exact files used
+as research evidence. See the [BIOS profile system](docs/BIOS_PROFILES.md) for
+adding and validating other models or firmware families.
 
 For the end-to-end build, USB preparation, boot, verification, and log-recovery
 procedure, follow the [SREP USB Creation and Boot Guide](docs/USB_GUIDE.md).

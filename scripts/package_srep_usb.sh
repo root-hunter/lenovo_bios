@@ -3,21 +3,21 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 BOOTX64.EFI SREP_CONFIG OUTPUT_DIR [VERSION]" >&2
+  echo "Usage: $0 BOOTX64.EFI PROFILE_DIR OUTPUT_DIR [VERSION]" >&2
   exit 2
 }
 
 [[ $# -ge 3 && $# -le 4 ]] || usage
 
 efi_path=$1
-config_path=$2
+profile_dir=$2
 output_dir=$3
 version=${4:-dev}
 
 [[ -s "$efi_path" ]] || { echo "Missing or empty EFI executable: $efi_path" >&2; exit 1; }
-[[ -s "$config_path" ]] || { echo "Missing or empty SREP configuration: $config_path" >&2; exit 1; }
+[[ -d "$profile_dir" ]] || { echo "Profile directory not found: $profile_dir" >&2; exit 1; }
 
-for command_name in cmp mcopy mdir mformat mmd sgdisk sha256sum truncate xz zip; do
+for command_name in cmp mcopy mdir mformat mmd python3 sgdisk sha256sum truncate xz zip; do
   command -v "$command_name" >/dev/null 2>&1 || {
     echo "Required command not found: $command_name" >&2
     exit 1
@@ -26,12 +26,17 @@ done
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo_root=$(cd -- "$script_dir/.." && pwd)
-usb_readme="$repo_root/configs/srep/USB-README.txt"
+profile_tool="$repo_root/scripts/profile_tool.py"
 
-[[ -s "$usb_readme" ]] || { echo "Missing USB readme: $usb_readme" >&2; exit 1; }
+python3 "$profile_tool" validate "$profile_dir"
+profile_id=$(python3 "$profile_tool" get "$profile_dir" id)
+config_name=$(python3 "$profile_tool" get "$profile_dir" config)
+readme_name=$(python3 "$profile_tool" get "$profile_dir" readme)
+config_path="$profile_dir/$config_name"
+usb_readme="$profile_dir/$readme_name"
 
 safe_version=${version//[^A-Za-z0-9._-]/-}
-artifact_name="lenovo-15arh05-srep-usb-$safe_version"
+artifact_name="$profile_id-srep-usb-$safe_version"
 
 mkdir -p "$output_dir"
 output_dir=$(cd -- "$output_dir" && pwd)
@@ -93,7 +98,12 @@ xz -T0 -9e -c -- "$image_path" > "$xz_path"
 
 (
   cd -- "$output_dir"
-  sha256sum "$(basename -- "$xz_path")" "$(basename -- "$zip_path")" > SHA256SUMS
+  mapfile -t release_files < <(
+    find . -maxdepth 1 -type f \( -name '*.img.xz' -o -name '*-files.zip' \) \
+      -printf '%f\n' | sort
+  )
+  ((${#release_files[@]} > 0)) || { echo "No release files found" >&2; exit 1; }
+  sha256sum "${release_files[@]}" > SHA256SUMS
 )
 
 echo "Created:"
