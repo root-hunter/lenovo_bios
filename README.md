@@ -295,58 +295,41 @@ the upstream repository did not provide a current release asset. The build used:
 The resulting x86-64 EFI executable is 16,640 bytes with SHA-256
 `79c46eb5fdb37ceb0aff7dcafa385c3f2cf018538f6e82704081242a714529da`.
 
-A FAT32 USB drive was prepared with:
+A GPT-partitioned FAT32 USB drive was prepared with:
 
 ```text
 EFI/BOOT/BOOTX64.EFI
 SREP_Config.cfg
 ```
 
-The experimental model-specific configuration is tracked as
-`configs/srep/15ARH05-FCCN21WW.cfg`:
+The current configuration is tracked as
+[`configs/srep/15ARH05-FCCN21WW.cfg`](configs/srep/15ARH05-FCCN21WW.cfg). It uses
+SREP upstream's combined Lenovo form-set patch for AMD PBS, AMD CBS, Power, and
+Advanced, then launches `SetupUtilityApp` in the same boot session.
 
-```text
-Op Loaded
-H2OFormBrowserDxe
-Op Patch
-Pattern
-9E76D4C6487F2A4D98E987ADCCF35CCC00000000
-9E76D4C6487F2A4D98E987ADCCF35CCC01000000
-Op End
-
-Op LoadFromFV
-SetupUtility
-Op Exec
-```
-
-The pattern is the Advanced form-set GUID in EFI byte order followed by a
-hypothesized visibility flag changed from zero to one.
-
-The USB EFI application was started, but entering the BIOS afterwards did not
-show a new Advanced page. Therefore the patch is **not confirmed to work** on the
-tested machine. Plausible explanations include:
-
-- the configuration file was not found or parsed;
-- the installed `FCCN19WW` module or UI section names differ from `FCCN21WW`;
-- the target byte pattern differs between those firmware versions;
-- the executable section is named `SetupUtilityApp`, not `SetupUtility`;
-- the patch existed only in memory and was lost after leaving or rebooting;
-- the firmware reconstructs or overrides its form-set visibility table later.
+The first USB test used only the Advanced GUID pattern and launched
+`SetupUtility`. Its saved SREP log proves that the application and configuration
+loaded, but reports `No Patter Found`. Entering the regular F2 setup after that
+boot could not show a runtime patch. The USB has since been rebuilt with the
+combined configuration and `SetupUtilityApp`; this revised attempt still needs
+to be tested on the laptop. An unlock therefore remains **unconfirmed**.
 
 ## 7. Recommended next steps
 
-1. Capture a clear photograph or complete transcription of SREP's console output,
-   including every load, pattern-match, patch, and execution result.
-2. Obtain the exact `FCCN19WW` update package or, preferably, two identical reads
+1. Boot the rebuilt USB and use the Setup Utility launched directly by SREP; do
+   not reboot or enter the ordinary F2 setup after SREP exits.
+2. Preserve `SREP.log` and capture every module load, pattern-match, patch, and
+   execution result.
+3. Obtain the exact `FCCN19WW` update package or, preferably, two identical reads
    from the laptop's physical SPI flash.
-3. Extract `H2OFormBrowserDxe` and `SetupUtility` from that exact firmware and
+4. Extract `H2OFormBrowserDxe` and `SetupUtilityApp` from that exact firmware and
    confirm the UI section names and Advanced GUID pattern.
-4. Test a diagnostic SREP configuration that only reports module/pattern matches
+5. Test a diagnostic SREP configuration that only reports module/pattern matches
    before attempting another runtime patch.
-5. If the names confirm it, test execution of `SetupUtilityApp` in the same boot
+6. If the names confirm it, test execution of `SetupUtilityApp` in the same boot
    session so that a runtime-only patch is still present.
-6. If Advanced becomes visible, inspect pages first and exit without saving.
-7. Before changing any firmware setting, prepare a verified hardware recovery
+7. If Advanced becomes visible, inspect pages first and exit without saving.
+8. Before changing any firmware setting, prepare a verified hardware recovery
    path and preserve the original board-specific flash contents.
 
 For a physical SPI backup, identify the flash chip and voltage first, use the
