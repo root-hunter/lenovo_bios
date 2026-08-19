@@ -96,6 +96,20 @@ condition.
 | [![CBS ABL debug options](../screenshots/cbs-08-abl-debug-controls.jpg)](../screenshots/cbs-08-abl-debug-controls.jpg) | ABL console-output and PMU debug-message controls. |
 | [![CBS FCH I/O index](../screenshots/cbs-09-fch-io-menu.jpg)](../screenshots/cbs-09-fch-io-menu.jpg) | FCH I/O index with SATA, USB, AC power-loss, I2C, UART, eSPI, and XGBE submenus. |
 | [![CBS SATA options](../screenshots/cbs-10-sata-controls.jpg)](../screenshots/cbs-10-sata-controls.jpg) | SATA controller and port configuration under AMD CBS. |
+| [![CBS SoC clock and voltage options](../screenshots/cbs-11-soc-fclk-vid-uclk-controls.jpg)](../screenshots/cbs-11-soc-fclk-vid-uclk-controls.jpg) | FCLK frequency, VDDR_SOC overclock VID, and UCLK divider controls. The displayed VID formula is firmware help text, not a tuning recommendation. |
+| [![CBS fan control](../screenshots/cbs-12-fan-control.jpg)](../screenshots/cbs-12-fan-control.jpg) | Fan-control mode, forced PWM control, and fan-table policy. |
+| [![CBS SmartShift limits](../screenshots/cbs-13-smartshift-power-limits.jpg)](../screenshots/cbs-13-smartshift-power-limits.jpg) | SmartShift/A+A support and APU-only, sustained, fast, and slow power-limit fields. |
+| [![CBS system power profiles](../screenshots/cbs-14-system-configuration-por-profiles.jpg)](../screenshots/cbs-14-system-configuration-por-profiles.jpg) | System Configuration menu with 10 W through 54 W consumer/embedded POR profiles, plus Fan, temperature, STAPM, SmartShift, and CPPC submenus. The firmware itself warns that an unsupported profile may hang the system. |
+| [![CBS CAD bus timing](../screenshots/cbs-15-cad-bus-timing-controls.jpg)](../screenshots/cbs-15-cad-bus-timing-controls.jpg) | CAD bus timing controls for `AddrCmdSetup`, `CsOdtSetup`, and `CkeSetup`. |
+| [![CBS CAD bus drive strength](../screenshots/cbs-16-cad-bus-drive-strength.jpg)](../screenshots/cbs-16-cad-bus-drive-strength.jpg) | CAD bus drive-strength controls and visible impedance choices from 120.0 to 20.0 ohms. |
+| [![CBS data bus termination](../screenshots/cbs-17-data-bus-termination-controls.jpg)](../screenshots/cbs-17-data-bus-termination-controls.jpg) | DRAM data-bus configuration with `RttNom`, `RttWr`, and `RttPark`; the open list shows the available `RZQ` termination ratios. |
+| [![CBS DRAM repair and CRC](../screenshots/cbs-18-dram-repair-parity-crc-controls.jpg)](../screenshots/cbs-18-dram-repair-parity-crc-controls.jpg) | Data poisoning, post-package repair, RCD/command parity, replay limits, and write-CRC controls. |
+| [![CBS DRAM ECC](../screenshots/cbs-19-dram-ecc-controls.jpg)](../screenshots/cbs-19-dram-ecc-controls.jpg) | DRAM ECC symbol size, ECC enable, and uncorrectable-error retry controls. |
+| [![CBS TSME and scrambling](../screenshots/cbs-20-tsme-data-scrambling.jpg)](../screenshots/cbs-20-tsme-data-scrambling.jpg) | TSME and DRAM data-scrambling controls. |
+| [![CBS memory timings](../screenshots/cbs-21-memory-overclock-timings.jpg)](../screenshots/cbs-21-memory-overclock-timings.jpg) | Memory overclock page with clock selection and primary timings including `Tcl`, `Trcdrd`, `Trcdwr`, `Trp`, and `Tras`. |
+| [![CBS memory clock choices](../screenshots/cbs-22-memory-clock-options.jpg)](../screenshots/cbs-22-memory-clock-options.jpg) | Memory Clock Speed list, visibly ranging from 667 MHz to 1800 MHz. Availability does not establish hardware support. |
+| [![CBS memory MBIST](../screenshots/cbs-23-memory-mbist-controls.jpg)](../screenshots/cbs-23-memory-mbist-controls.jpg) | Memory MBIST mode, aggressor test, per-bit slave-die reporting, and Data Eye controls. |
+| [![CBS memory interleaving](../screenshots/cbs-24-memory-interleaving-map.jpg)](../screenshots/cbs-24-memory-interleaving-map.jpg) | Memory-channel interleaving, interleave size, and DRAM map inversion. |
 
 ## Interpretation rules
 

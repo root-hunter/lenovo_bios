@@ -1,4 +1,4 @@
-# Hidden Advanced Menu Inventory
+# Hidden Advanced and Runtime Option Inventory
 
 This inventory was reconstructed from
 `SetupUtility.3.0.Advanced.en-US.uefi.ifr.txt`, extracted from Lenovo's
@@ -30,6 +30,57 @@ The menu has since been rendered successfully on the physical `FCCN19WW` test
 machine through a runtime SREP patch. The [photo gallery](SCREENSHOTS.md) provides
 visual cross-checks for these categories. This does not promote the offsets
 below to `FCCN19WW` offsets; they remain an inventory extracted from `FCCN21WW`.
+
+## Controls physically observed on FCCN19WW
+
+The runtime session provides direct evidence that the following controls render
+on the test laptop. These entries come from photographs of the running setup
+utility, not from the `FCCN21WW` Advanced IFR inventory below. Consequently,
+their VarStore IDs, offsets, encoded values, dependencies, and defaults remain
+**unknown**.
+
+> [!IMPORTANT]
+> `Auto`, `Manual`, `Enabled`, and other values shown in a photograph describe
+> that captured UI state only. Some lists were opened solely to record their
+> choices. None of these states is presented as the factory default or as a safe
+> configuration.
+
+### Clocks, thermals, and platform power
+
+| Area | Controls or choices visibly observed | Evidence |
+|---|---|---|
+| SoC clocks and voltage | FCLK Frequency, VDDR_SOC overclock VID, UCLK DIV1 MODE; help text states `UCLK=MEMCLK` or `MEMCLK/2` according to divider mode | [`cbs-11`](../screenshots/cbs-11-soc-fclk-vid-uclk-controls.jpg) |
+| Fan policy | Fan Control, Force PWM Control, Fan Table Control | [`cbs-12`](../screenshots/cbs-12-fan-control.jpg) |
+| SmartShift and limits | SmartShift Control, SmartShift/A+A enable, APU-only sPPT, sustained, fast, and slow PPT limits | [`cbs-13`](../screenshots/cbs-13-smartshift-power-limits.jpg) |
+| System profiles | Fan Control, System Temperature Tracking, STAPM Control, SmartShift Control, CPPC, and selectable 10 W–54 W consumer/embedded POR profiles | [`cbs-14`](../screenshots/cbs-14-system-configuration-por-profiles.jpg) |
+
+The System Configuration help text explicitly warns that selecting a profile
+unsupported by the processor OPN can hang the system.
+
+### DRAM electrical and reliability controls
+
+| Area | Controls or choices visibly observed | Evidence |
+|---|---|---|
+| CAD timing | `AddrCmdSetup`, `CsOdtSetup`, `CkeSetup`, and manual/automatic timing policy | [`cbs-15`](../screenshots/cbs-15-cad-bus-timing-controls.jpg) |
+| CAD drive strength | Clock, address/command, chip-select/ODT, and CKE drive strength; the open list visibly includes 120.0, 60.0, 40.0, 30.0, 24.0, and 20.0 ohms | [`cbs-16`](../screenshots/cbs-16-cad-bus-drive-strength.jpg) |
+| Data-bus termination | `RttNom`, `RttWr`, and `RttPark`; visible `RZQ/1` through `RZQ/7` choices and disable/auto states | [`cbs-17`](../screenshots/cbs-17-data-bus-termination-controls.jpg) |
+| Repair, parity, and CRC | Data Poisoning, DRAM Post Package Repair, RCD Parity, DRAM Address Command Parity Retry, parity replay limit, Write CRC, DRAM Write CRC retry, and CRC replay limit | [`cbs-18`](../screenshots/cbs-18-dram-repair-parity-crc-controls.jpg) |
+| ECC | DRAM ECC Symbol Size (`x4`/`x8` per help text), DRAM ECC Enable, and DRAM UECC Retry | [`cbs-19`](../screenshots/cbs-19-dram-ecc-controls.jpg) |
+| Memory protection | TSME and Data Scramble | [`cbs-20`](../screenshots/cbs-20-tsme-data-scrambling.jpg) |
+
+### Memory tuning, testing, and topology
+
+| Area | Controls or choices visibly observed | Evidence |
+|---|---|---|
+| Memory overclock | Overclock gate, Memory Clock Speed, `Tcl`, `Trcdrd`, `Trcdwr`, `Trp`, `Tras`, and additional timing fields below the photographed viewport | [`cbs-21`](../screenshots/cbs-21-memory-overclock-timings.jpg) |
+| Memory clock list | `Auto` and 667–1800 MHz choices visible in the expanded selector | [`cbs-22`](../screenshots/cbs-22-memory-clock-options.jpg) |
+| Memory diagnostics | MBIST Enable, Test Mode, Aggressors, Per Bit Slave Die Reporting, and Data Eye | [`cbs-23`](../screenshots/cbs-23-memory-mbist-controls.jpg) |
+| Memory mapping | Memory interleaving, 256-byte through 2-Kbyte interleave sizes, and DRAM map inversion | [`cbs-24`](../screenshots/cbs-24-memory-interleaving-map.jpg) |
+
+This physical inventory confirms the presence of extensive AMD CBS pages that
+were not represented in the static `Advanced` form-set tables. It still does not
+resolve the `Hybrid Graphics` control: that label was not observed in these new
+captures and no offset is assigned to it.
 
 ## PCI Express
 
@@ -143,7 +194,10 @@ semantics are unknown, so they must not be treated as menu-unlock variables.
 ## Safety classification
 
 The highest-risk areas are display routing, SATA/RAID mode, PCIe GPP state,
-PSP/fTPM and Secure Boot, SVM/SMM locks, and any unidentified field. Changing
-one of these can prevent storage discovery, video initialization, setup access,
-or boot. Any testing should begin with observation only and a verified physical
-SPI recovery path.
+PSP/fTPM and Secure Boot, SVM/SMM locks, and any unidentified field. The runtime
+captures add equally sensitive fan/PWM tables, SmartShift/STAPM/PPT limits,
+system POR profiles, SoC VID, FCLK/UCLK, DRAM impedance and termination, ECC/CRC,
+memory timings, MBIST, and interleaving controls. Changing one of these can
+prevent storage discovery, video or memory initialization, setup access, or
+boot, and unsafe thermal or voltage settings may damage hardware. Testing should
+remain observation-only until a verified physical SPI recovery path exists.

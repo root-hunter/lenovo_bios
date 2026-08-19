@@ -53,7 +53,7 @@ form-set GUIDs, then opens the Setup Utility in the **same boot session**.
 | Hidden `Advanced` form set recovered from IFR | `Advanced` rendered in Setup Utility |
 | Form-set GUID and variable stores identified | `AMD PBS` and `AMD CBS` also became visible |
 | Visibility trigger represented by GUID + shown flag | Combined runtime patch succeeded on `FCCN19WW` |
-| No firmware flashing required for the reveal | 33 photographs preserve the successful session |
+| No firmware flashing required for the reveal | 47 photographs preserve the successful session |
 
 The [physical-test gallery](docs/SCREENSHOTS.md) is the final proof: the hidden
 pages are present and can be exposed on this machine. This confirms menu
@@ -115,6 +115,7 @@ local research artifacts excluded by `.gitignore`.
 | Reset-stage x86 image decompressed | Confirmed |
 | Hidden `Advanced` form set found | Confirmed in `FCCN21WW` |
 | Advanced option inventory recovered | Confirmed from IFR |
+| Extended AMD CBS controls documented | **Physically observed on `FCCN19WW`** |
 | Complete emulation in QEMU | Not achieved |
 | `Fn+R+N` keyboard unlock | No effect on this machine |
 | SREP EFI runtime menu reveal | **Confirmed on the `FCCN19WW` test machine** |
@@ -134,7 +135,7 @@ local research artifacts excluded by `.gitignore`.
 │   ├── SCREENSHOTS.md
 │   └── USB_GUIDE.md
 ├── screenshots/
-│   └── 33 optimized physical-test photographs
+│   └── 47 optimized physical-test photographs
 └── scripts/
     └── extract_reset_image.py
 ```
