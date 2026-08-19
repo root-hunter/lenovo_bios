@@ -7,6 +7,8 @@ running `FCCN19WW`; SREP applies the combined form-set patch in memory and start
 
 The result was also shared in this
 [Reddit community discussion](https://www.reddit.com/r/LenovoLegion/comments/1vsqzod/comment/p4o1d51/).
+To reproduce the same runtime result, start with the
+[SREP USB creation and boot guide](USB_GUIDE.md).
 
 > [!IMPORTANT]
 > The gallery proves that the menus can be rendered. It does **not** prove that

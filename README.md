@@ -6,7 +6,7 @@
 
 <img src="screenshots/advanced-01-menu-overview.jpg" alt="Hidden Advanced menu running on a Lenovo IdeaPad Gaming 3 15ARH05" width="900">
 
-[Research walkthrough](#1-starting-from-the-official-lenovo-update) · [Advanced option inventory](docs/ADVANCED_OPTIONS.md) · [Photo gallery](docs/SCREENSHOTS.md) · [SREP configuration](configs/srep/15ARH05-FCCN21WW.cfg)
+[Create the USB](docs/USB_GUIDE.md) · [Advanced option inventory](docs/ADVANCED_OPTIONS.md) · [Photo gallery](docs/SCREENSHOTS.md) · [Research walkthrough](#1-starting-from-the-official-lenovo-update)
 
 </div>
 
@@ -26,6 +26,23 @@ local research artifacts excluded by `.gitignore`.
 > The extracted update image is not a substitute for a verified, machine-specific
 > SPI backup. The runtime menu reveal does not make the exposed settings safe,
 > and no permanent firmware modification has been validated.
+
+## Reproduce the runtime menu reveal
+
+The complete, beginner-friendly procedure is in
+**[SREP USB Creation and Boot Guide](docs/USB_GUIDE.md)**. It covers:
+
+1. building the tested SREP revision or verifying an existing binary;
+2. creating a GPT/FAT32 USB drive on Windows or Linux;
+3. installing `BOOTX64.EFI` and the tracked configuration;
+4. disabling Secure Boot and launching the USB in UEFI mode;
+5. confirming the hidden menus, exiting without saving, and preserving
+   `SREP.log`.
+
+> [!IMPORTANT]
+> Start with the dedicated guide instead of reconstructing the procedure from
+> the research log below. The guide contains the exact file layout, source
+> revisions, tested hash, safety checks, and troubleshooting table.
 
 ## What has been demonstrated
 
@@ -82,7 +99,8 @@ variable semantics in the installed `FCCN19WW` firmware.
 │       └── 15ARH05-FCCN21WW.cfg
 ├── docs/
 │   ├── ADVANCED_OPTIONS.md
-│   └── SCREENSHOTS.md
+│   ├── SCREENSHOTS.md
+│   └── USB_GUIDE.md
 ├── screenshots/
 │   └── 33 optimized physical-test photographs
 └── scripts/
@@ -334,6 +352,9 @@ The current configuration is tracked as
 [`configs/srep/15ARH05-FCCN21WW.cfg`](configs/srep/15ARH05-FCCN21WW.cfg). It uses
 SREP upstream's combined Lenovo form-set patch for AMD PBS, AMD CBS, Power, and
 Advanced, then launches `SetupUtilityApp` in the same boot session.
+
+For the end-to-end build, USB preparation, boot, verification, and log-recovery
+procedure, follow the [SREP USB Creation and Boot Guide](docs/USB_GUIDE.md).
 
 The first USB test used only the Advanced GUID pattern and launched
 `SetupUtility`. Its saved SREP log proves that the application and configuration
