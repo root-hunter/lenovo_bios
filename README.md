@@ -1,8 +1,19 @@
+<div align="center">
+
 # Lenovo IdeaPad Gaming 3 15ARH05 BIOS Research
+
+**Firmware extraction, IFR analysis, and a confirmed runtime reveal of the hidden InsydeH2O menus**
+
+<img src="screenshots/advanced-01-menu-overview.jpg" alt="Hidden Advanced menu running on a Lenovo IdeaPad Gaming 3 15ARH05" width="900">
+
+[Research walkthrough](#1-starting-from-the-official-lenovo-update) · [Advanced option inventory](docs/ADVANCED_OPTIONS.md) · [Photo gallery](docs/SCREENSHOTS.md) · [SREP configuration](configs/srep/15ARH05-FCCN21WW.cfg)
+
+</div>
 
 This repository documents the extraction and analysis of a Lenovo BIOS update for
 the IdeaPad Gaming 3 15ARH05, including the discovery of a hidden InsydeH2O
-`Advanced` form set and the attempts made to expose it at runtime.
+`Advanced` form set and its successful, non-persistent exposure at runtime with
+SREP and Lenovo's `SetupUtilityApp`.
 
 Only original documentation, scripts, and experimental text configurations are
 intended to be tracked. Lenovo/Insyde executables, firmware images, extracted
@@ -13,7 +24,20 @@ local research artifacts excluded by `.gitignore`.
 > This is firmware research, not a ready-to-flash modification. A wrong setup
 > variable or firmware image can leave the laptop unable to display video or boot.
 > The extracted update image is not a substitute for a verified, machine-specific
-> SPI backup. No permanent firmware modification has been validated.
+> SPI backup. The runtime menu reveal does not make the exposed settings safe,
+> and no permanent firmware modification has been validated.
+
+## What has been demonstrated
+
+| Firmware research | Physical-machine validation |
+|---|---|
+| 16 MiB update ROM recovered and mapped | Combined SREP patch executed on `FCCN19WW` |
+| Hidden `Advanced` IFR inventory reconstructed | `Advanced`, `AMD PBS`, and `AMD CBS` rendered in Setup Utility |
+| AMD PSP and reset-stage paths analysed | Menus inspected without flashing a modified firmware image |
+
+The photographs are direct evidence of the runtime result on the test laptop.
+They are observation records, not recommended values or a configuration guide.
+See the [annotated screenshot gallery](docs/SCREENSHOTS.md) for all captures.
 
 ## Hardware and firmware context
 
@@ -44,7 +68,8 @@ variable semantics in the installed `FCCN19WW` firmware.
 | Advanced option inventory recovered | Confirmed from IFR |
 | Complete emulation in QEMU | Not achieved |
 | `Fn+R+N` keyboard unlock | No effect on this machine |
-| SREP EFI runtime attempt | Booted/tested, unlock not confirmed |
+| SREP EFI runtime menu reveal | **Confirmed on the `FCCN19WW` test machine** |
+| Hidden `AMD PBS` and `AMD CBS` pages | **Confirmed at runtime** |
 | Permanent firmware modification | Not attempted |
 
 ## Repository layout
@@ -56,7 +81,10 @@ variable semantics in the installed `FCCN19WW` firmware.
 │   └── srep/
 │       └── 15ARH05-FCCN21WW.cfg
 ├── docs/
-│   └── ADVANCED_OPTIONS.md
+│   ├── ADVANCED_OPTIONS.md
+│   └── SCREENSHOTS.md
+├── screenshots/
+│   └── 33 optimized physical-test photographs
 └── scripts/
     └── extract_reset_image.py
 ```
@@ -282,7 +310,7 @@ effect. Public reports of this sequence working often concern later Lenovo
 15ACH6/ARH7 generations; reports for the 15ARH05 are inconsistent. It is not a
 confirmed unlock method for this firmware.
 
-### SREP runtime patch
+### SREP runtime patch — confirmed
 
 Smokeless Runtime EFI Patcher (SREP) tag `0.1.4c` was built from source because
 the upstream repository did not provide a current release asset. The build used:
@@ -310,26 +338,34 @@ Advanced, then launches `SetupUtilityApp` in the same boot session.
 The first USB test used only the Advanced GUID pattern and launched
 `SetupUtility`. Its saved SREP log proves that the application and configuration
 loaded, but reports `No Patter Found`. Entering the regular F2 setup after that
-boot could not show a runtime patch. The USB has since been rebuilt with the
-combined configuration and `SetupUtilityApp`; this revised attempt still needs
-to be tested on the laptop. An unlock therefore remains **unconfirmed**.
+boot could not show a runtime patch because the patched environment was no
+longer active.
+
+The rebuilt USB used the combined form-set configuration and launched
+`SetupUtilityApp` in the same boot session. This attempt succeeded on the test
+laptop running `FCCN19WW`: the hidden `Advanced`, `AMD PBS`, and `AMD CBS` menu
+entries became visible and their pages rendered correctly. The result is
+documented in the [physical-test gallery](docs/SCREENSHOTS.md).
+
+This confirms a **runtime menu reveal**, not a permanent unlock. The patch is
+applied in memory for that boot path; the firmware image on SPI flash was not
+modified. The photographs also do not establish that changing any exposed
+setting is safe.
 
 ## 7. Recommended next steps
 
-1. Boot the rebuilt USB and use the Setup Utility launched directly by SREP; do
-   not reboot or enter the ordinary F2 setup after SREP exits.
-2. Preserve `SREP.log` and capture every module load, pattern-match, patch, and
-   execution result.
+1. Preserve the successful run's `SREP.log` and record every module load,
+   pattern-match, patch, and execution result alongside the photographs.
+2. Re-run the procedure once without saving changes to confirm repeatability and
+   document the exact boot sequence.
 3. Obtain the exact `FCCN19WW` update package or, preferably, two identical reads
    from the laptop's physical SPI flash.
 4. Extract `H2OFormBrowserDxe` and `SetupUtilityApp` from that exact firmware and
    confirm the UI section names and Advanced GUID pattern.
-5. Test a diagnostic SREP configuration that only reports module/pattern matches
-   before attempting another runtime patch.
-6. If the names confirm it, test execution of `SetupUtilityApp` in the same boot
-   session so that a runtime-only patch is still present.
-7. If Advanced becomes visible, inspect pages first and exit without saving.
-8. Before changing any firmware setting, prepare a verified hardware recovery
+5. Compare the installed `FCCN19WW` IFR against the existing `FCCN21WW`
+   inventory before associating photographed controls with variable offsets.
+6. Keep further runtime sessions observation-only and exit without saving.
+7. Before changing any firmware setting, prepare a verified hardware recovery
    path and preserve the original board-specific flash contents.
 
 For a physical SPI backup, identify the flash chip and voltage first, use the
@@ -351,4 +387,5 @@ no-display failure after changing graphics-related hidden settings.
 - [PSPTool](https://github.com/PSPReverse/PSPTool)
 - [Smokeless Runtime EFI Patcher](https://github.com/barlowhaydnb/SmokelessRuntimeEFIPatcher)
 - [flashrom classic CLI documentation](https://flashrom.org/classic_cli_manpage.html)
+- [Reddit community discussion and follow-up](https://www.reddit.com/r/LenovoLegion/comments/1vsqzod/comment/p4o1d51/)
 - [15ARH05 hidden-setting brick report](https://winraid.level1techs.com/t/problem-lenovo-ideapad-3-15arh05-corrupt-bios-settings/107542)

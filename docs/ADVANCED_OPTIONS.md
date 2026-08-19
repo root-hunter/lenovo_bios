@@ -26,6 +26,11 @@ Configuration, IDE/SATA, NVMe, Video, USB, Chipset, ACPI, CPU, and DASH forms.
 It also exposes `Above 4GB MMIO` at `SystemConfig+0x1FE`: Disabled (`0`) or
 Enabled (`1`, default).
 
+The menu has since been rendered successfully on the physical `FCCN19WW` test
+machine through a runtime SREP patch. The [photo gallery](SCREENSHOTS.md) provides
+visual cross-checks for these categories. This does not promote the offsets
+below to `FCCN19WW` offsets; they remain an inventory extracted from `FCCN21WW`.
+
 ## PCI Express
 
 | Setting | Offset | Values; default |
@@ -142,4 +147,3 @@ PSP/fTPM and Secure Boot, SVM/SMM locks, and any unidentified field. Changing
 one of these can prevent storage discovery, video initialization, setup access,
 or boot. Any testing should begin with observation only and a verified physical
 SPI recovery path.
-
