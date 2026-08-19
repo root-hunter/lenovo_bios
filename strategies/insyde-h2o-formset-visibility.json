@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "insyde-h2o-formset-visibility",
+  "display_name": "InsydeH2O form-set visibility table",
+  "firmware": {
+    "vendor": "Insyde",
+    "family": "InsydeH2O"
+  },
+  "record_layout": {
+    "guid_encoding": "uefi-guid-little-endian",
+    "visibility_type": "uint32-little-endian",
+    "hidden_value": 0,
+    "shown_value": 1
+  },
+  "target_module_candidates": [
+    "H2OFormBrowserDxe"
+  ],
+  "launcher_candidates": [
+    "SetupUtilityApp",
+    "SetupUtility"
+  ],
+  "source": {
+    "project": "SmokelessRuntimeEFIPatcher",
+    "revision": "83d0ae47c9a48b3a2227aef06fb98a372c5ba354",
+    "documentation": "README.md form-list visibility example and SmokeyCPU reverse-engineering notes",
+    "url": "https://www.stanto.com/files/SmokeyCPU-DecExt.pdf"
+  },
+  "notes": "This strategy describes a reusable mechanism, not compatibility with every InsydeH2O firmware. Each profile must select targets and supply firmware-verified form-set GUIDs."
+}

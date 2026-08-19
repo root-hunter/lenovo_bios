@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "id": "lenovo-15arh05-fccn",
   "display_name": "Lenovo IdeaPad Gaming 3 15ARH05 — FCCN family",
   "platform": {
@@ -7,15 +7,47 @@
     "machine_types": ["82EY"],
     "product_names": ["IP3GAMING-15ARH"]
   },
+  "firmware": {
+    "vendor": "Insyde",
+    "family": "InsydeH2O",
+    "architecture": "x86_64"
+  },
   "compatibility": {
     "bios_family": "FCCN",
     "analyzed_versions": ["FCCN21WW"],
     "hardware_tested_versions": ["FCCN19WW"]
   },
-  "patch": {
+  "strategy": "insyde-h2o-formset-visibility",
+  "targets": {
     "module": "H2OFormBrowserDxe",
     "launcher": "SetupUtilityApp"
   },
+  "form_sets": [
+    {
+      "guid": "B863B959-0EC6-4033-99C1-8FD89F040222",
+      "name": "AMD PBS",
+      "required": true,
+      "provenance": "upstream-srep-pbs-ifr-documentation"
+    },
+    {
+      "guid": "B04535E3-3004-4946-9EB7-149428983053",
+      "name": "AMD CBS",
+      "required": true,
+      "provenance": "upstream-srep-documented-cbs"
+    },
+    {
+      "guid": "A6712873-925F-46C6-90B4-A40F86A0917B",
+      "name": "Power",
+      "required": true,
+      "provenance": "fccn21ww-ifr-analysis"
+    },
+    {
+      "guid": "C6D4769E-7F48-4D2A-98E9-87ADCCF35CCC",
+      "name": "Advanced",
+      "required": true,
+      "provenance": "fccn21ww-ifr-analysis"
+    }
+  ],
   "status": "hardware-tested",
   "config": "SREP_Config.cfg",
   "readme": "README.txt",

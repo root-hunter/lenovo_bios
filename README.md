@@ -148,6 +148,8 @@ local research artifacts excluded by `.gitignore`.
 │       ├── profile.json
 │       ├── SREP_Config.cfg
 │       └── README.txt
+├── strategies/
+│   └── insyde-h2o-formset-visibility.json
 ├── .github/workflows/
 │   └── build-usb-image.yml
 ├── docs/
@@ -430,6 +432,10 @@ Power, and Advanced, then launches `SetupUtilityApp` in the same boot session.
 Profiles keep compatibility claims separate from hashes of the exact files used
 as research evidence. See the [BIOS profile system](docs/BIOS_PROFILES.md) for
 adding and validating other models or firmware families.
+
+The reusable `GUID + uint32 visibility` mechanism is modeled separately as an
+InsydeH2O strategy. This allows other vendors and models to reuse the renderer
+without implying that the FCCN targets or GUIDs are universally compatible.
 
 For the end-to-end build, USB preparation, boot, verification, and log-recovery
 procedure, follow the [SREP USB Creation and Boot Guide](docs/USB_GUIDE.md).

@@ -8,6 +8,7 @@ PROFILE
   Firmware analyzed: FCCN21WW
   Installed BIOS tested on hardware: FCCN19WW
   Boot mode: UEFI with Secure Boot disabled
+  Strategy: InsydeH2O form-set visibility table
 
 WARNING
   This profile exposes firmware settings that Lenovo normally hides. Opening
