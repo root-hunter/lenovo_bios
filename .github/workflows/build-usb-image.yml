@@ -24,7 +24,9 @@ env:
 
 jobs:
   build-usb-image:
-    runs-on: ubuntu-latest
+    # EDK II stable202205 is tested with the older GCC/toolchain shipped here.
+    # Keep this pinned instead of following ubuntu-latest (currently 24.04).
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
 
     steps:
@@ -34,9 +36,30 @@ jobs:
           persist-credentials: false
 
       - name: Install build and image tools
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes --no-install-recommends \
+          # Hosted runners also enable unrelated Microsoft/Google repositories.
+          # The build needs only Ubuntu packages, so exclude those repositories
+          # to prevent a third-party mirror from stalling apt-get update.
+          disabled_sources="${RUNNER_TEMP}/disabled-apt-sources"
+          mkdir -p "$disabled_sources"
+          for source in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+            [[ -e "$source" ]] || continue
+            case "$(basename "$source")" in
+              ubuntu.sources|ubuntu.list) continue ;;
+            esac
+            sudo mv "$source" "$disabled_sources/"
+          done
+
+          sudo timeout --signal=TERM 5m apt-get \
+            -o Acquire::Retries=3 \
+            -o Acquire::http::Timeout=30 \
+            -o Acquire::https::Timeout=30 \
+            update
+          sudo timeout --signal=TERM 5m apt-get \
+            -o Acquire::Retries=3 \
+            --yes --no-install-recommends install \
             build-essential file gdisk iasl mtools nasm \
             python3 python3-setuptools uuid-dev xz-utils zip
 
