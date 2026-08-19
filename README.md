@@ -4,9 +4,11 @@
 
 **From a failed keyboard shortcut to a reverse-engineered, runtime EFI menu reveal**
 
+[![Build bootable USB image](https://github.com/root-hunter/lenovo_bios/actions/workflows/build-usb-image.yml/badge.svg)](https://github.com/root-hunter/lenovo_bios/actions/workflows/build-usb-image.yml)
+
 <img src="screenshots/advanced-01-menu-overview.jpg" alt="Hidden Advanced menu running on a Lenovo IdeaPad Gaming 3 15ARH05" width="900">
 
-[Create the USB](docs/USB_GUIDE.md) · [Advanced option inventory](docs/ADVANCED_OPTIONS.md) · [Photo gallery](docs/SCREENSHOTS.md) · [Research walkthrough](#1-starting-from-the-official-lenovo-update)
+[Download USB image](https://github.com/root-hunter/lenovo_bios/releases/latest) · [Create the USB](docs/USB_GUIDE.md) · [Advanced option inventory](docs/ADVANCED_OPTIONS.md) · [Photo gallery](docs/SCREENSHOTS.md) · [Research walkthrough](#1-starting-from-the-official-lenovo-update)
 
 </div>
 
@@ -67,6 +69,12 @@ visibility only; it does not establish that changing any exposed value is safe.
 > and no permanent firmware modification has been validated.
 
 ## Reproduce the runtime menu reveal
+
+The fastest route is the
+**[latest ready-to-write USB image](https://github.com/root-hunter/lenovo_bios/releases/latest)**.
+Every release is built automatically from the pinned EDK II and SREP commits,
+contains the tracked model configuration, and includes SHA-256 checksums. It
+does not contain Lenovo firmware.
 
 The complete, beginner-friendly procedure is in
 **[SREP USB Creation and Boot Guide](docs/USB_GUIDE.md)**. It covers:
@@ -129,7 +137,10 @@ local research artifacts excluded by `.gitignore`.
 ├── README.md
 ├── configs/
 │   └── srep/
-│       └── 15ARH05-FCCN21WW.cfg
+│       ├── 15ARH05-FCCN21WW.cfg
+│       └── USB-README.txt
+├── .github/workflows/
+│   └── build-usb-image.yml
 ├── docs/
 │   ├── ADVANCED_OPTIONS.md
 │   ├── SCREENSHOTS.md
@@ -137,7 +148,8 @@ local research artifacts excluded by `.gitignore`.
 ├── screenshots/
 │   └── 47 optimized physical-test photographs
 └── scripts/
-    └── extract_reset_image.py
+    ├── extract_reset_image.py
+    └── package_srep_usb.sh
 ```
 
 The paths used later in this document for firmware and extraction output describe

@@ -33,13 +33,15 @@ patterns or write setup variables by trial and error.
 
 - A USB drive whose contents may be erased.
 - AC power connected and a charged laptop battery.
-- A copy of this repository.
-- A trusted x86-64 SREP EFI executable, built as described below.
+- The ready-to-write release image, or a copy of this repository when building
+  it locally.
+- A trusted x86-64 SREP EFI executable only when following the manual path.
 - Access to the Windows device-encryption or BitLocker recovery key, if enabled.
 - A second device from which to read this guide is strongly recommended.
 
-The repository intentionally does not redistribute the third-party SREP binary.
-It provides the tested configuration and reproducible build information.
+GitHub Actions builds the third-party SREP application from the pinned source
+revision and publishes it inside the ready-to-write image. The repository does
+not track the binary itself and no Lenovo firmware is included.
 
 ## Process overview
 
@@ -56,6 +58,69 @@ SREP patches H2OFormBrowserDxe in memory
         ↓
 SetupUtilityApp opens with the hidden menus visible
 ```
+
+## Fast path — use the ready-to-write image
+
+Open the [latest GitHub Release](https://github.com/root-hunter/lenovo_bios/releases/latest)
+and download:
+
+- `lenovo-15arh05-srep-usb-*.img.xz`, the compressed GPT/FAT32 disk image;
+- `SHA256SUMS`, used to verify the download.
+
+The release also provides `*-files.zip` for users who already have a correctly
+formatted GPT/FAT32 USB and prefer to copy the files manually.
+
+> [!CAUTION]
+> Writing the `.img` replaces the partition table and all data on the selected
+> USB drive. Confirm its manufacturer and capacity. Never select the system
+> disk.
+
+On Windows, verify the SHA-256 value, decompress the image with 7-Zip, and write
+the resulting `.img` with Rufus or balenaEtcher. Select the image and the USB by
+model and capacity; do not use ISO extraction mode.
+
+On Linux, download both files into one directory and run:
+
+```bash
+grep '\.img\.xz$' SHA256SUMS | sha256sum --check -
+xz --decompress --keep lenovo-15arh05-srep-usb-*.img.xz
+lsblk --output NAME,SIZE,MODEL,TRAN,MOUNTPOINTS
+```
+
+After identifying the whole USB device—not one of its partitions—write it with
+the explicit device path. The following is only a template; replace `/dev/sdX`
+after checking `lsblk`:
+
+```bash
+sudo dd if=lenovo-15arh05-srep-usb-*.img \
+  of=/dev/sdX bs=4M status=progress conv=fsync
+sync
+```
+
+Remove and reconnect the drive. It should expose a FAT32 partition labelled
+`SREP` containing `EFI/BOOT/BOOTX64.EFI`, `SREP_Config.cfg`, and `README.txt`.
+Continue at [Step 6 — Prepare the laptop](#step-6--prepare-the-laptop).
+
+### How the published image is produced
+
+The workflow in
+[`build-usb-image.yml`](../.github/workflows/build-usb-image.yml) performs the
+complete pinned-source build:
+
+1. checks out EDK II and SREP at the pinned commits below;
+2. builds the x86-64 release EFI application;
+3. validates its PE/COFF architecture;
+4. creates a 128 MiB GPT image with one FAT32 EFI System Partition;
+5. copies and reads back the bootloader and tracked configuration;
+6. publishes the compressed image, manual-copy ZIP, build information, and
+   SHA-256 checksums as a workflow artifact;
+7. publishes the same files to GitHub Releases when a `v*` tag is pushed or a
+   manual run supplies a `release_tag`.
+
+Manual runs without a release tag remain downloadable from the workflow run for
+30 days. The packaging logic is kept in
+[`package_srep_usb.sh`](../scripts/package_srep_usb.sh) so the disk layout can be
+tested independently of GitHub Actions.
 
 ## Step 1 — Get this repository
 

@@ -1,0 +1,149 @@
+name: Build bootable SREP USB image
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Optional v* tag to create or update as a GitHub Release
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: srep-usb-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  EDK2_COMMIT: 16779ede2d366bfc6b702e817356ccf43425bcc8
+  SREP_COMMIT: 83d0ae47c9a48b3a2227aef06fb98a372c5ba354
+
+jobs:
+  build-usb-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install build and image tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            build-essential file gdisk iasl mtools nasm \
+            python3 python3-setuptools uuid-dev xz-utils zip
+
+      - name: Fetch pinned EDK II and SREP sources
+        working-directory: ${{ runner.temp }}
+        run: |
+          git clone --branch edk2-stable202205 \
+            https://github.com/tianocore/edk2.git edk2
+          git -C edk2 checkout "$EDK2_COMMIT"
+          git -C edk2 submodule update --init --recursive
+          git clone https://github.com/barlowhaydnb/SmokelessRuntimeEFIPatcher.git \
+            edk2/SmokelessRuntimeEFIPatcher
+          git -C edk2/SmokelessRuntimeEFIPatcher checkout "$SREP_COMMIT"
+
+      - name: Build the x86-64 SREP EFI application
+        working-directory: ${{ runner.temp }}/edk2
+        shell: bash
+        run: |
+          make -C BaseTools -j"$(nproc)"
+          source ./edksetup.sh
+          build -b RELEASE -t GCC5 \
+            -p SmokelessRuntimeEFIPatcher/SmokelessRuntimeEFIPatcher.dsc \
+            -a X64 -s
+
+      - name: Validate the EFI executable
+        id: efi
+        shell: bash
+        run: |
+          efi_path="${{ runner.temp }}/edk2/Build/SmokelessRuntimeEFIPatcher/RELEASE_GCC5/X64/SmokelessRuntimeEFIPatcher.efi"
+          test -s "$efi_path"
+          file "$efi_path" | tee efi-file-type.txt
+          file "$efi_path" | grep -E 'PE32\+.*EFI application.*x86-64'
+          sha256sum "$efi_path" | tee efi-sha256.txt
+          echo "path=$efi_path" >> "$GITHUB_OUTPUT"
+
+      - name: Select artifact version
+        id: version
+        env:
+          MANUAL_RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            version=$GITHUB_REF_NAME
+          elif [[ -n "$MANUAL_RELEASE_TAG" ]]; then
+            version=$MANUAL_RELEASE_TAG
+          else
+            version="run-$GITHUB_RUN_NUMBER-$GITHUB_SHA"
+          fi
+          if [[ ! "$version" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Invalid artifact or release version: $version" >&2
+            exit 1
+          fi
+          if [[ -n "$MANUAL_RELEASE_TAG" && ! "$MANUAL_RELEASE_TAG" =~ ^v[A-Za-z0-9._-]+$ ]]; then
+            echo "Manual release_tag must begin with v" >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create and verify the USB artifacts
+        env:
+          EFI_PATH: ${{ steps.efi.outputs.path }}
+          VERSION: ${{ steps.version.outputs.value }}
+        shell: bash
+        run: |
+          chmod +x scripts/package_srep_usb.sh
+          scripts/package_srep_usb.sh \
+            "$EFI_PATH" \
+            configs/srep/15ARH05-FCCN21WW.cfg \
+            dist \
+            "$VERSION"
+          cp efi-file-type.txt efi-sha256.txt dist/
+          {
+            echo "Repository commit: $GITHUB_SHA"
+            echo "EDK II commit: $EDK2_COMMIT"
+            echo "SREP commit: $SREP_COMMIT"
+            echo "Runner: $RUNNER_OS $RUNNER_ARCH"
+          } > dist/BUILD-INFO.txt
+          (cd dist && sha256sum BUILD-INFO.txt efi-file-type.txt efi-sha256.txt >> SHA256SUMS)
+          (cd dist && sha256sum --check SHA256SUMS)
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: lenovo-15arh05-srep-usb-${{ steps.version.outputs.value }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MANUAL_RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            release_tag=$GITHUB_REF_NAME
+          else
+            release_tag=$MANUAL_RELEASE_TAG
+          fi
+
+          if gh release view "$release_tag" >/dev/null 2>&1; then
+            gh release upload "$release_tag" dist/* --clobber
+          else
+            gh release create "$release_tag" dist/* \
+              --target "$GITHUB_SHA" \
+              --title "SREP USB image $release_tag" \
+              --generate-notes
+          fi
