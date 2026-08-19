@@ -173,6 +173,6 @@ jobs:
             gh release create "$RELEASE_TAG" dist/* \
               --repo "$GITHUB_REPOSITORY" \
               --target "$GITHUB_SHA" \
-              --title "Lenovo BIOS Unlocker $RELEASE_TAG" \
+              --title "BIOS Unlocker $RELEASE_TAG" \
               --generate-notes
           fi
