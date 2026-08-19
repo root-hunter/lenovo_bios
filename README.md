@@ -67,8 +67,10 @@ repository and must be produced from a legitimately obtained Lenovo update.
 
 ## 1. Starting from the official Lenovo update
 
-The starting file was Lenovo's Windows BIOS updater, saved as
-`artifacts/vendor/update-package/fccn21ww.exe`:
+The starting point was the official
+[Lenovo BIOS Update for Windows 10 (64-bit) — IdeaPad Gaming 3 15ARH05](https://support.lenovo.com/us/en/downloads/ds545103-bios-update-for-windows-10-64-bit-ideapad-gaming-3-15arh05)
+download page. The Windows BIOS updater obtained from that page was saved locally
+as `artifacts/vendor/update-package/fccn21ww.exe`:
 
 | Property | Value |
 |---|---|
@@ -362,7 +364,7 @@ no-display failure after changing graphics-related hidden settings.
 
 ## References
 
-- [Lenovo FCCN21WW support page](https://support.lenovo.com/in/en/downloads/ds545103-bios-update-for-windows-10-64-bit-ideapad-gaming-3-15arh05)
+- [Lenovo BIOS Update for Windows 10 (64-bit) — IdeaPad Gaming 3 15ARH05](https://support.lenovo.com/us/en/downloads/ds545103-bios-update-for-windows-10-64-bit-ideapad-gaming-3-15arh05)
 - [PSPTool](https://github.com/PSPReverse/PSPTool)
 - [Smokeless Runtime EFI Patcher](https://github.com/barlowhaydnb/SmokelessRuntimeEFIPatcher)
 - [flashrom classic CLI documentation](https://flashrom.org/classic_cli_manpage.html)
